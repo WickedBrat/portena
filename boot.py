@@ -5,15 +5,48 @@ import time
 from network import LoRa
 import _thread
 
-message_list = []
+message_obj = {}
 
-def message_string_op(method='get', message=None):
+
+def message_string_op(method='get', message=None, name='Rohit'):
     if method == 'get':
-        return message_list
+        message_string = ''
+        for key, value in message_obj.items():
+            message_string = message_string + '%s: %s' % (key, value) + '<br>'
+        return message_string
     if method == 'add':
-        message_list.append(message)
-        return message_list
+        message_obj[name] = message
+        return message_obj
     return None
+
+
+def get_response_content():
+    response_content = """
+                    <!DOCTYPE html>
+                    <html lang="en">
+                    <head>
+                        <title>Document</title>
+                    </head>
+                    <body>
+                        <h1>Hello World from LoPy Nigga!</h1>
+                        <form method="post">
+                            <p>%s</p>
+                            <input type="text" name="extra_name">
+                            <button type="submit">Submit</button>
+                        </form>
+                        <script>
+                            setInterval(function () {
+                                var xhr = new XMLHttpRequest();
+                                xhr.open('POST', '192.168.4.1', true)
+                                xhr.setRequestHeader('Refresh', 'yes');
+                                xhr.setRequestHeader('MessageLength', '%d');
+                                xhr.send()
+                            }, 5000);
+                        </script>
+                    </body>
+                    </html>              
+                 """ % (message_string_op(), len(message_obj))
+    return response_content
 
 
 class Server:
@@ -41,7 +74,8 @@ class Server:
             self.socket.bind((self.host, self.port))
 
         except Exception as e:
-            print("Warning: Could not aquite port:", self.port, " : ERROR: ", e, "\n")
+            print("Warning: Could not aquite port:",
+                  self.port, " : ERROR: ", e, "\n")
             print("I will try a higher port")
             user_port = self.port
             self.port = 8080
@@ -91,40 +125,22 @@ class Server:
 
         return h
 
-    def update_again(self, conn, message):
-        message_string = ''
-        for text in message:
-            message_string = message_string + '<br>' + text
-        print('+++++++++++++++++++++++++++++++++++++++++++\n\n')
-        print(message_string)
-        print('\n\n+++++++++++++++++++++++++++++++++++++++++++++++')
-
-        response_content = """
-            <!DOCTYPE html>
-            <html lang="en">
-            <head>
-                <title>Document</title>
-            </head>
-            <body>
-                <h1>Hello World from LoPy Nigga!</h1>
-                <form action="" method="post">
-                    <p>%s</p>
-                    <input type="text" name="extra_name">
-                    <button type="submit">Submit</button>
-                </form>
-            </body>
-            </html>              
-            """ % message_string
-
+    def send_to_frontend(self, conn):
+        response_content = get_response_content()
         response_headers = self._gen_headers(200)
         server_response = response_headers.encode()  # return headers for GET and HEAD
         server_response += response_content  # return additional conten for GET only
         conn.send(server_response)
         conn.close()
 
+    def update_again(self, conn, message):
+        message_string_op('add', message, 'Siddhant')
+        self.send_to_frontend(conn)
+
+
     def _wait_for_connections(self):
         """ Main loop awaiting connections """
-        
+
         lora = LoRa(mode=LoRa.LORA)
         s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         s.setblocking(False)
@@ -136,28 +152,26 @@ class Server:
             conn, addr = self.socket.accept()
             print("Got connection from:", addr)
 
-            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-            print(message_list)
-            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
-
-
             data = conn.recv(1024)
             string = bytes.decode(data)
 
-            request_method = string.split(' ')[0]
+            split_string = string.split(' ')
+
+            request_method = split_string[0]
             print("Method: ", request_method)
             print("Request body: ", string)
 
-            text_to_send = string.split(' ')[-1]
+            text_to_send = split_string[-1]
+
+            if (request_method == 'POST' and split_string[8][:1] == 'y'):
+                if len(message_obj) > int(split_string[7][:1]):
+                    self.send_to_frontend(conn)
+                continue
 
             if (request_method == 'POST'):
-                text_message = []
-                print('\n\n\t Trying to send data \n\n')
+                message_string_op('add', text_to_send)
                 s.send(text_to_send)
-                print('\n\n\t Sent \n\n')
-
-                text_message.append(text_to_send)
-                self.update_again(conn, text_message)
+                self.update_again(conn, text_to_send)
 
             #  text_message.append(text_to_send)
             #  self.update_again(conn, text_to_send)
@@ -166,7 +180,7 @@ class Server:
             if (request_method == 'GET') | (request_method == 'HEAD'):
                 # file_requested = string[4:]
                #  # split on space "GET /file.html" -into-> ('GET','file.html',...)
-               #  file_requested = string.split(' ')
+               #  file_requested = split_string
                #  file_requested = file_requested[1] # get 2nd element
 
                #  # Check for URL arguments. Disregard them
@@ -180,21 +194,8 @@ class Server:
 
                 # Load file content
                 try:
-                    response_content = """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <title>Document</title>
-                    </head>
-                    <body>
-                        <h1>Hello World from LoPy Nigga!</h1>
-                        <form action="" method="post">
-                            <input type="text" name="extra_name">
-                            <button type="submit">Submit</button>
-                        </form>
-                    </body>
-                    </html>              
-                 """
+                    print(message_obj)
+                    response_content = get_response_content()
 
                     response_headers = self._gen_headers(200)
 
@@ -205,7 +206,7 @@ class Server:
                     if (request_method == 'GET'):
                         response_content = b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
 
-                server_response = response_headers.encode() # return headers for GET and HEAD
+                server_response = response_headers.encode()  # return headers for GET and HEAD
                 if (request_method == 'GET'):
                     server_response += response_content  # return additional conten for GET only
 
@@ -227,6 +228,6 @@ def graceful_shutdown(sig, dummy):
 # signal.signal(signal.SIGINT, graceful_shutdown)
 
 
-print ("Starting web server")
+print("Starting web server")
 s = Server(80)  # construct server object
 s.activate_server()  # aquire the socket
