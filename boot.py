@@ -1,31 +1,48 @@
 #!/usr/bin/python
 
-import socket  # Networking support
-# import signal  # Signal support (server shutdown on signal receive)
-import time    # Current time
-
+import socket
+import time
 from network import LoRa
+import _thread
+
+message_list = []
+
+def message_string_op(method='get', message=None):
+    if method == 'get':
+        return message_string
+    if method == 'add':
+        message_list.append(message)
+        return message_list
+    return None
+
 
 class Server:
     """ Class describing a simple HTTP server objects."""
 
     def __init__(self, port=808):
         """ Constructor """
-        self.host = ''   # <-- works on all avaivable network interfaces
+        self.host = ''
         self.port = port
-        self.www_dir = 'www'  # Directory where webpage files are stored
+        self.www_dir = 'www'
+
+    def listen_at_all_times(self, conn):
+        """This function recieves data at all times."""
+        while True:
+            data = conn.recv(2056)
+            if data:
+                message_string_op('add', data.decode())
+            time.sleep(0.5)
 
     def activate_server(self):
         """ Attempts to aquire the socket and launch the server """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:  # user provided in the __init__() port may be unavaivable
+        try:
             print("Launching HTTP server on ", self.host, ":", self.port)
             self.socket.bind((self.host, self.port))
 
         except Exception as e:
-            print("Warning: Could not aquite port:", self.port, "\n")
+            print("Warning: Could not aquite port:", self.port, " : ERROR: ", e, "\n")
             print("I will try a higher port")
-            # store to user provideed port locally for later (in case 8080 fails)
             user_port = self.port
             self.port = 8080
 
@@ -105,7 +122,6 @@ class Server:
         conn.send(server_response)
         conn.close()
 
-
     def _wait_for_connections(self):
         """ Main loop awaiting connections """
         
@@ -113,30 +129,25 @@ class Server:
         s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         s.setblocking(False)
 
+        is_threaded = False
+
         while True:
             print("Awaiting New connection")
-            print('Waiting for message')
-
-            recv_msg = s.recv(2065)
-            print(recv_msg)
-            if recv_msg:
-                print('+++++++++++++++++++++++++++++++\n\n\t\t')
-                print(recv_msg, '\n\n++++++++++++++++++++++++++++++++++++++++++')
-
-            # conn - socket to client
-            # addr - clients address
-            print('Waiting for data')
-            self.socket.listen(3)  # maximum number of queued connections
+            self.socket.listen(3)
             conn, addr = self.socket.accept()
             print("Got connection from:", addr)
 
-            data = conn.recv(1024)  # receive data from client
-            print(data)
-            if not data:
-                continue
-            string = bytes.decode(data)  # decode it to string
+            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
+            print(message_list)
+            print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
 
-            # determine request method  (HEAD and GET are supported)
+            if not is_threaded:
+                _thread.start_new_thread(self.listen_at_all_times, (conn,))
+                is_threaded = True
+
+            data = conn.recv(1024)
+            string = bytes.decode(data)
+
             request_method = string.split(' ')[0]
             print("Method: ", request_method)
             print("Request body: ", string)
@@ -153,13 +164,11 @@ class Server:
                 self.update_again(conn, text_message)
 
             #  text_message.append(text_to_send)
-
             #  self.update_again(conn, text_to_send)
-
             # if string[0:3] == 'GET':
+
             if (request_method == 'GET') | (request_method == 'HEAD'):
                 # file_requested = string[4:]
-
                #  # split on space "GET /file.html" -into-> ('GET','file.html',...)
                #  file_requested = string.split(' ')
                #  file_requested = file_requested[1] # get 2nd element
@@ -218,7 +227,6 @@ def graceful_shutdown(sig, dummy):
     import sys
     sys.exit(1)
 
-###########################################################
 # shut down on ctrl+c
 # signal.signal(signal.SIGINT, graceful_shutdown)
 
