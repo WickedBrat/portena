@@ -9,7 +9,7 @@ message_list = []
 
 def message_string_op(method='get', message=None):
     if method == 'get':
-        return message_string
+        return message_list
     if method == 'add':
         message_list.append(message)
         return message_list
@@ -128,8 +128,7 @@ class Server:
         lora = LoRa(mode=LoRa.LORA)
         s = socket.socket(socket.AF_LORA, socket.SOCK_RAW)
         s.setblocking(False)
-
-        is_threaded = False
+        _thread.start_new_thread(self.listen_at_all_times, (s,))
 
         while True:
             print("Awaiting New connection")
@@ -141,9 +140,6 @@ class Server:
             print(message_list)
             print('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++')
 
-            if not is_threaded:
-                _thread.start_new_thread(self.listen_at_all_times, (conn,))
-                is_threaded = True
 
             data = conn.recv(1024)
             string = bytes.decode(data)
