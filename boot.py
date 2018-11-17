@@ -5,22 +5,49 @@ import time
 from network import LoRa
 import _thread
 
-message_obj = {}
+message_list = []
 
 
-def message_string_op(method='get', message=None, name='Rohit'):
+def get_normalised_string(string):
+    words = string.split('+')
+    normalised_string = ' '.join(words)
+    return normalised_string
+
+
+def message_string_op(method='get', message=None, name=''):
     if method == 'get':
         message_string = ''
-        for key, value in message_obj.items():
-            message_string = message_string + '%s: %s' % (key, value) + '<br>'
+        for message in message_list:
+            message_string = message_string + message + '<br>'
         return message_string
     if method == 'add':
-        message_obj[name] = message
-        return message_obj
+        message = get_normalised_string(message)
+        message_list.append(name + ': ' + message)
+        text_file = open('message_entry_db', 'w')
+        text_file.write(message_string_op(name=name))
+        text_file.close()
+        return message_list
     return None
 
 
-def get_response_content():
+def get_response_content(username=''):
+    if username == '':
+        return """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <title>Document</title>
+                </head>
+                <body>
+                    <h1>Hello World from LoPy Nigga!</h1>
+                    <form method="post">
+                        <input type="text" name="username">
+                        <button type="submit">Submit Username</button>
+                    </form>
+                </body>
+                </html>              
+                """
+
     response_content = """
                     <!DOCTYPE html>
                     <html lang="en">
@@ -45,7 +72,7 @@ def get_response_content():
                         </script>
                     </body>
                     </html>              
-                 """ % (message_string_op(), len(message_obj))
+                 """ % (message_string_op(name=username), len(message_list))
     return response_content
 
 
@@ -57,6 +84,7 @@ class Server:
         self.host = ''
         self.port = port
         self.www_dir = 'www'
+        self.username = ''
 
     def listen_at_all_times(self, conn):
         """This function recieves data at all times."""
@@ -126,17 +154,16 @@ class Server:
         return h
 
     def send_to_frontend(self, conn):
-        response_content = get_response_content()
+        response_content = get_response_content(username=self.username)
         response_headers = self._gen_headers(200)
         server_response = response_headers.encode()  # return headers for GET and HEAD
         server_response += response_content  # return additional conten for GET only
         conn.send(server_response)
         conn.close()
 
-    def update_again(self, conn, message):
-        message_string_op('add', message, 'Siddhant')
+    def update_again(self, conn, message, username):
+        message_string_op('add', message, self.username)
         self.send_to_frontend(conn)
-
 
     def _wait_for_connections(self):
         """ Main loop awaiting connections """
@@ -147,7 +174,7 @@ class Server:
         _thread.start_new_thread(self.listen_at_all_times, (s,))
 
         while True:
-            print("Awaiting New connection")
+            print("Awaiting New connection from ", self.username)
             self.socket.listen(3)
             conn, addr = self.socket.accept()
             print("Got connection from:", addr)
@@ -161,20 +188,27 @@ class Server:
             print("Method: ", request_method)
             print("Request body: ", string)
 
-            text_to_send = split_string[-1]
+            recieved_post_data = split_string[-1][53:]
+
+            print(split_string)
+
+            if (request_method == 'POST' and split_string[-1][42:43] == 'u'):
+                self.username = split_string[-1][51:]
+                self.send_to_frontend(conn)
+                continue
 
             if (request_method == 'POST' and split_string[8][:1] == 'y'):
-                if len(message_obj) > int(split_string[7][:1]):
+                print(len(message_list), '+'*100, int(split_string[7][:1]))
+                if len(message_list) > int(split_string[7][:1]):
                     self.send_to_frontend(conn)
                 continue
 
             if (request_method == 'POST'):
-                message_string_op('add', text_to_send)
-                s.send(text_to_send)
-                self.update_again(conn, text_to_send)
+                s.send(self.username + ': ' + recieved_post_data)
+                self.update_again(conn, recieved_post_data, self.username)
 
-            #  text_message.append(text_to_send)
-            #  self.update_again(conn, text_to_send)
+            #  text_message.append(recieved_post_data)
+            #  self.update_again(conn, recieved_post_data)
             # if string[0:3] == 'GET':
 
             if (request_method == 'GET') | (request_method == 'HEAD'):
@@ -192,10 +226,9 @@ class Server:
                #  file_requested = self.www_dir + file_requested
                #  print ("Serving web page [",file_requested,"]")
 
-                # Load file content
                 try:
-                    print(message_obj)
-                    response_content = get_response_content()
+                    print(message_list)
+                    response_content = get_response_content(username=self.username)
 
                     response_headers = self._gen_headers(200)
 
