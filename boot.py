@@ -68,11 +68,16 @@ def get_response_content(username=''):
                                 xhr.setRequestHeader('Refresh', 'yes');
                                 xhr.setRequestHeader('MessageLength', '%d');
                                 xhr.send()
+                                xhr.onreadystatechange = function() {
+                                    if (this.readyState == 4 && this.status == 200) {
+                                        location.replace('192.168.4.1');
+                                    }
+                                };
                             }, 5000);
                         </script>
                     </body>
                     </html>              
-                 """ % (message_string_op(name=username), len(message_list))
+                 """ % (message_string_op(), len(message_list))
     return response_content
 
 
@@ -188,12 +193,10 @@ class Server:
             print("Method: ", request_method)
             print("Request body: ", string)
 
-            recieved_post_data = split_string[-1][53:]
+            recieved_post_data = split_string[-1][split_string[-1].find('extra_name')+11:]
 
-            print(split_string)
-
-            if (request_method == 'POST' and split_string[-1][42:43] == 'u'):
-                self.username = split_string[-1][51:]
+            if (request_method == 'POST' and ('username' in split_string[-1])):
+                self.username = split_string[-1][split_string[-1].find('username')+9:]
                 self.send_to_frontend(conn)
                 continue
 
