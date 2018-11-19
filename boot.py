@@ -4,81 +4,109 @@ import socket
 import time
 from network import LoRa
 import _thread
+import gc
 
-message_list = []
+message_list = {'xx-yy': ['zz']}
+client_username = {}
+
+header = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Portena</title>
+        <style>
+            body {
+                background-color: grey;
+            }
+            * {
+                color: white;
+            }
+        </style>
+    </head>
+    <body>
+    <center><h1>Portena</h1>
+"""
+
+introductory_text = header + """
+        <form method="post">
+            <input type="text" name="username">
+            <button type="submit">Submit Username</button>
+        </form>
+        </center>
+    </body>
+    </html>
+    """
+
+
+def generate_dynamic_user_list():
+    dynamic_user_list = ''
+    for key, user in client_username:
+        dynamic_user_list += '<a href="/users/%s">%s</a><br>' % (user, user)
+    return dynamic_user_list
+
+
+user_page_response_content = header + """
+        <h2>This is users page</h2>
+        <a href="/users"><h3>View of online users</h3></a>
+        %s
+        </center>
+    </body>
+    </html>
+    """ % generate_dynamic_user_list()
+
+
+def generate_from_to_user_message_list(from_user, to_user):
+    message = {}
+    message['string'] = ''
+    message['length'] = 0
+    compare = []
+    compare.append(from_user + '-' + to_user)
+    compare.append(to_user + '-' + from_user)
+    if (from_user + '-' + to_user) in message_list.keys():
+        message['length'] = len(message_list[from_user + '-' + to_user])
+        for messages in message_list[from_user + '-' + to_user]:
+            message['string'] += to_user + '-> ' + messages + '<br>'
+    else:
+        message['length'] = len(message_list[to_user + '-' + from_user])
+        for messages in message_list[to_user + '-' + from_user]:
+            message['string'] += to_user + '-> ' + messages + '<br>'
+    return message
+
+
+def get_user_message_page(from_user, to_user, message):
+    user_message_page = header + """
+        <form method="post">
+            <p>%s</p>
+            <input type="text" from_user=""
+            <input type="text" name="message">
+            <button type="submit">Submit</button>
+        </form>
+        </center>
+        <script>
+            setInterval(function () {
+                var xhr = new XMLHttpRequest();
+                xhr.open('POST', '192.168.4.1', true)
+                xhr.setRequestHeader('Refresh', 'yes');
+                xhr.setRequestHeader('MessageLength', '%d');
+                xhr.send()
+                xhr.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        location.replace('192.168.4.1');
+                    }
+                };
+            }, 5000);
+        </script>
+    </body>
+    </html>
+    """ % (message['string'], message['length'])
+    return user_message_page
 
 
 def get_normalised_string(string):
     words = string.split('+')
     normalised_string = ' '.join(words)
     return normalised_string
-
-
-def message_string_op(method='get', message=None, name=''):
-    if method == 'get':
-        message_string = ''
-        for message in message_list:
-            message_string = message_string + message + '<br>'
-        return message_string
-    if method == 'add':
-        message = get_normalised_string(message)
-        message_list.append(name + ': ' + message)
-        text_file = open('message_entry_db', 'w')
-        text_file.write(message_string_op(name=name))
-        text_file.close()
-        return message_list
-    return None
-
-
-def get_response_content(username=''):
-    if username == '':
-        return """
-                <!DOCTYPE html>
-                <html lang="en">
-                <head>
-                    <title>Document</title>
-                </head>
-                <body>
-                    <h1>Hello World from LoPy Nigga!</h1>
-                    <form method="post">
-                        <input type="text" name="username">
-                        <button type="submit">Submit Username</button>
-                    </form>
-                </body>
-                </html>              
-                """
-
-    response_content = """
-                    <!DOCTYPE html>
-                    <html lang="en">
-                    <head>
-                        <title>Document</title>
-                    </head>
-                    <body>
-                        <h1>Hello World from LoPy Nigga!</h1>
-                        <form method="post">
-                            <p>%s</p>
-                            <input type="text" name="extra_name">
-                            <button type="submit">Submit</button>
-                        </form>
-                        <script>
-                            setInterval(function () {
-                                var xhr = new XMLHttpRequest();
-                                xhr.open('POST', '192.168.4.1', true)
-                                xhr.setRequestHeader('Refresh', 'yes');
-                                xhr.setRequestHeader('MessageLength', '%d');
-                                xhr.send()
-                                xhr.onreadystatechange = function() {
-                                    if (this.readyState == 4 && this.status == 200) {
-                                        location.replace('192.168.4.1');
-                                    }
-                                };
-                            }, 5000);
-                        </script>
-                    </body>
-                    </html>              
-                 """ % (message_string_op(), len(message_list))
-    return response_content
 
 
 class Server:
@@ -94,9 +122,10 @@ class Server:
     def listen_at_all_times(self, conn):
         """This function recieves data at all times."""
         while True:
-            data = conn.recv(2056)
+            data = conn.recv(300)
             if data:
-                message_string_op('add', data.decode())
+                print(data)
+                message_list[data.split('*')[0]] = data.split('*')[1]
             time.sleep(0.5)
 
     def activate_server(self):
@@ -158,17 +187,20 @@ class Server:
 
         return h
 
-    def send_to_frontend(self, conn):
-        response_content = get_response_content(username=self.username)
+    def send_to_frontend(self, conn, response_content):
         response_headers = self._gen_headers(200)
         server_response = response_headers.encode()  # return headers for GET and HEAD
         server_response += response_content  # return additional conten for GET only
-        conn.send(server_response)
-        conn.close()
+        print('++++++++++++++++**/*//*', gc.mem_free())
+        try:
+            conn.send(server_response)
+            conn.close()
+        except Exception as e:
+            print(e)
 
-    def update_again(self, conn, message, username):
-        message_string_op('add', message, self.username)
-        self.send_to_frontend(conn)
+    # def update_again(self, conn, message, username):
+    #     message_string_operations('add', message, self.username)
+    #     self.send_to_frontend(conn, )
 
     def _wait_for_connections(self):
         """ Main loop awaiting connections """
@@ -179,78 +211,150 @@ class Server:
         _thread.start_new_thread(self.listen_at_all_times, (s,))
 
         while True:
-            print("Awaiting New connection from ", self.username)
+            gc.collect()
+            print("\n -- Awaiting new connection/request from clients -- ")
             self.socket.listen(3)
             conn, addr = self.socket.accept()
-            print("Got connection from:", addr)
+            print('\n -- Recieved connection from ',
+                  addr[0], ' with port ', addr[1])
 
             data = conn.recv(1024)
             string = bytes.decode(data)
+            options = {}
 
             split_string = string.split(' ')
-
             request_method = split_string[0]
+
             print("Method: ", request_method)
             print("Request body: ", string)
 
-            recieved_post_data = split_string[-1][split_string[-1].find('extra_name')+11:]
+            for option in string.split('\n'):
+                options[option[:option.find(':')]
+                        ] = option[option.find(':')+2:]
 
-            if (request_method == 'POST' and ('username' in split_string[-1])):
-                self.username = split_string[-1][split_string[-1].find('username')+9:]
-                self.send_to_frontend(conn)
-                continue
+            print('+'*100 + '\n', string)
 
-            if (request_method == 'POST' and split_string[8][:1] == 'y'):
-                print(len(message_list), '+'*100, int(split_string[7][:1]))
-                if len(message_list) > int(split_string[7][:1]):
-                    self.send_to_frontend(conn)
-                continue
+            if request_method == 'GET':
+                # Code for when user connects to the WiFi for the first time. i.e. Introductory page.
+                if (options['User-Agent'] not in client_username.keys()) or client_username[options['User-Agent']] == '':
+                    client_username[options['User-Agent']] = ''
+                    self.send_to_frontend(conn, introductory_text)
+                    continue
 
-            if (request_method == 'POST'):
-                s.send(self.username + ': ' + recieved_post_data)
-                self.update_again(conn, recieved_post_data, self.username)
+                routes = split_string[1].split('/')
 
-            #  text_message.append(recieved_post_data)
-            #  self.update_again(conn, recieved_post_data)
-            # if string[0:3] == 'GET':
+                # Code for when user wants the page for the list of users. i.e. Users page.
+                if routes[1] == 'users':
+                    if split_string[1][6:7] == '/':
+                        to_user = routes[2]
+                        from_user = client_username[options['User-Agent']]
+                        if ((from_user + '-' + to_user) not in message_list) or ((to_user + '-' + from_user) not in message_list):
+                            message_list[from_user + '-' + to_user] = []
+                            self.send_to_frontend(
+                                conn, get_user_message_page(client_username[options['User-Agent']],
+                                                            to_user, {'string': '', 'length': 0}))
+                            continue
+                        self.send_to_frontend(
+                            conn, get_user_message_page(client_username[options['User-Agent']],
+                                                        to_user, generate_from_to_user_message_list(
+                                                            from_user, to_user)
+                                                        ))
+                        continue
+                    self.send_to_frontend(conn, header + """
+                            <h2>This is users page</h2>
+                            <a href="/users"><h3>View of online users</h3></a>
+                            %s
+                            </center>
+                        </body>
+                        </html>
+                        """ % generate_dynamic_user_list())
+                    continue
 
-            if (request_method == 'GET') | (request_method == 'HEAD'):
-                # file_requested = string[4:]
-               #  # split on space "GET /file.html" -into-> ('GET','file.html',...)
-               #  file_requested = split_string
-               #  file_requested = file_requested[1] # get 2nd element
+                # Code for when user sees the page. i.e. Message page.
 
-               #  # Check for URL arguments. Disregard them
-               #  file_requested = file_requested.split('?')[0]  # disregard anything after '?'
+            if request_method == 'POST':
+                if 'username' in split_string[-1][8:]:
+                    client_username[options['User-Agent']
+                                    ] = split_string[-1][51:]
+                    self.send_to_frontend(conn, user_page_response_content)
+                    continue
 
-               #  if (file_requested == '/'):  # in case no file is specified by the browser
-               #      file_requested = '/index.html' # load index.html by default
+                if 'message' in split_string[-1]:
+                    from_user = client_username[options['User-Agent']]
+                    to_user = split_string[1].split('/')[2]
+                    if (from_user + '-' + to_user) in message_list.keys():
+                        s.send(from_user + '-' + to_user + '*' +
+                               from_user + ': ' + split_string[-1][50:])
+                        message_list[from_user + '-' +
+                                     to_user].append(split_string[-1][50:])
+                    else:
+                        s.send(to_user + '-' + from_user + '*' +
+                               from_user + ': ' + split_string[-1][50:])
+                        message_list[to_user + '-' +
+                                     from_user].append(split_string[-1][50:])
+                    self.send_to_frontend(
+                        conn, get_user_message_page(client_username[options['User-Agent']],
+                                                    to_user, generate_from_to_user_message_list(
+                                                        from_user, to_user)
+                                                    ))
+                    continue
 
-               #  file_requested = self.www_dir + file_requested
-               #  print ("Serving web page [",file_requested,"]")
+            conn.close()
 
-                try:
-                    print(message_list)
-                    response_content = get_response_content(username=self.username)
+            # recieved_post_data = split_string[-1][split_string[-1].find(
+            #     'message')+8:]
 
-                    response_headers = self._gen_headers(200)
+            # if (request_method == 'POST' and ('username' in split_string[-1])):
+            #     self.username = split_string[-1][split_string[-1].find(
+            #         'username')+9:]
+            #     self.send_to_frontend(conn)
+            #     continue
 
-                except Exception as e:  # in case file was not found, generate 404 page
-                    print("Warning, file not found. Serving response code 404\n", e)
-                    response_headers = self._gen_headers(404)
+            # if (request_method == 'POST' and split_string[8][:1] == 'y'):
+            #     print(len(message_list), '+'*100, int(split_string[7][:1]))
+            #     if len(message_list) > int(split_string[7][:1]):
+            #         self.send_to_frontend(conn)
+            #     continue
 
-                    if (request_method == 'GET'):
-                        response_content = b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+            # if (request_method == 'POST'):
+            #     s.send(self.username + ': ' + recieved_post_data)
+            #     self.update_again(conn, recieved_post_data, self.username)
 
-                server_response = response_headers.encode()  # return headers for GET and HEAD
-                if (request_method == 'GET'):
-                    server_response += response_content  # return additional conten for GET only
+            # #  text_message.append(recieved_post_data)
+            # #  self.update_again(conn, recieved_post_data)
+            # # if string[0:3] == 'GET':
 
-                conn.send(server_response)
-                conn.close()
+            # if (request_method == 'GET') | (request_method == 'HEAD'):
+            #     # file_requested = string[4:]
+            #    #  # split on space "GET /file.html" -into-> ('GET','file.html',...)
+            #    #  file_requested = split_string
+            #    #  file_requested = file_requested[1] # get 2nd element
 
-            else:
-                print("Unknown HTTP request method:", request_method)
+            #    #  # Check for URL arguments. Disregard them
+            #    #  file_requested = file_requested.split('?')[0]  # disregard anything after '?'
+
+            #    #  if (file_requested == '/'):  # in case no file is specified by the browser
+            #    #      file_requested = '/index.html' # load index.html by default
+
+            #    #  file_requested = self.www_dir + file_requested
+            #    #  print ("Serving web page [",file_requested,"]")
+
+            #     try:
+            #         print(message_list)
+            #         response_headers = self._gen_headers(200)
+
+            #     except Exception as e:  # in case file was not found, generate 404 page
+            #         print("Warning, file not found. Serving response code 404\n", e)
+            #         response_headers = self._gen_headers(404)
+
+            #         if (request_method == 'GET'):
+            #             response_content = b"<html><body><p>Error 404: File not found</p><p>Python HTTP server</p></body></html>"
+
+            # server_response = response_headers.encode()  # return headers for GET and HEAD
+            # if (request_method == 'GET'):
+            #     server_response += response_content  # return additional conten for GET only
+
+            # conn.send(server_response)
 
 
 def graceful_shutdown(sig, dummy):
