@@ -1,0 +1,21 @@
+{
+  "generator-ngx-rocket": {
+    "version": "5.2.0",
+    "props": {
+      "location": "path",
+      "target": [
+        "web"
+      ],
+      "pwa": true,
+      "ui": "ionic",
+      "layout": "tabs",
+      "auth": false,
+      "angulartics": false,
+      "prettier": true,
+      "appName": "Portena",
+      "projectName": "portena",
+      "packageManager": "npm",
+      "mobile": []
+    }
+  }
+}
