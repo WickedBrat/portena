@@ -98,7 +98,7 @@
           timestamp: Date.now(),
           toGid: document.getElementById("to-user").innerHTML
         };
-        // socket.emit("message", { data: messagePacket });
+        socket.emit("message", { data: messagePacket });
         addMsgToLocalStorage(messagePacket);
         generateChatMessages();
 
