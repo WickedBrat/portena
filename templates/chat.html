@@ -66,7 +66,15 @@
     <div class="text-messages"></div>
 
     <div class="login-form">
-      <button class="btn btn-primary" onclick="">Call</button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        data-toggle="modal"
+        data-target="#exampleModal"
+        onclick="requestToCallUser()"
+      >
+        Call
+      </button>
       <input
         class="form-control"
         id="chatMsg"
@@ -80,7 +88,94 @@
         Send
       </button>
     </div>
-
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-toggle="modal"
+      data-target="#popUpModal"
+      style="visibility: hidden;"
+    >
+      yo
+    </button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      data-toggle="modal"
+      data-target="#ackModal"
+      style="visibility: hidden;"
+    >
+      ack
+    </button>
+    <!-- Modal to start call -->
+    <div
+      class="modal fade"
+      id="exampleModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="exampleModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">
+              Waiting to accept Call
+            </h5>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal to display ack -->
+    <div
+      class="modal fade"
+      id="ackModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="ackModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="ackModalLabel"></h5>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Modal to popup for call -->
+    <div
+      class="modal fade"
+      id="popUpModal"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="popUpModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="popUpModalLabel"></h5>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-danger"
+              data-dismiss="modal"
+              onclick="callAction('decline')"
+            >
+              Decline
+            </button>
+            <button
+              type="button"
+              class="btn btn-success"
+              onclick="callAction('accept')"
+            >
+              Accept
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
     <!-- Optional JavaScript -->
     <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
@@ -101,13 +196,12 @@
         };
         socket.emit("message", { data: messagePacket });
         addMsgToLocalStorage(messagePacket);
-        generateChatMessages();
 
         // TODO: Write code for ack of each emitted packet.
       }
       socket.on("reply", function(data) {
         data = JSON.parse(data.replace(/u'/g, "'").replace(/'/g, '"'));
-        addMsgToLocalStorage(data);
+        addMsgToLocalStorage(data.data);
       });
     </script>
 
@@ -127,6 +221,7 @@
           );
         }
         localStorage.setItem("chatMessages", JSON.stringify(chatMessages));
+        generateChatMessages();
       }
       function generateChatMessages() {
         var messageBox = document.createElement("message-box");
@@ -160,6 +255,125 @@
         $(".text-messages")[0].appendChild(messageBox);
       }
       generateChatMessages();
+    </script>
+
+    <script>
+      function requestToCallUser() {
+        socket.emit("requestToCall", {
+          requesting_gid: localStorage.getItem("gid"),
+          for_gid: $("#to-user").innerHTML
+        });
+      }
+      socket.on("userRequestedToCall", function(gidInfo) {
+        $("#popUpModalLabel").innerHTML =
+          "User " + gidInfo["requesting_gid"] + "has requested to call you.";
+        $("#popUpModal").click();
+      });
+      function callAction(action) {
+        socket.emit("callActionFromUser", { acceptance: action });
+      }
+      socket.on("acceptanceAck", function(ack) {
+        $("#ackModal").click();
+        if (ack["acceptance"] === "accept") {
+          $("ackModalLabel").innerHTML = "User has accepted your call.";
+        } else {
+          $("ackModalLabel").innerHTML = "User has declined your call.";
+        }
+      });
+    </script>
+
+    <script>
+      function b64toBlob(b64Data, contentType, sliceSize) {
+        contentType = contentType || "";
+        sliceSize = sliceSize || 512;
+
+        var byteCharacters = atob(b64Data);
+        var byteArrays = [];
+
+        for (
+          var offset = 0;
+          offset < byteCharacters.length;
+          offset += sliceSize
+        ) {
+          var slice = byteCharacters.slice(offset, offset + sliceSize);
+
+          var byteNumbers = new Array(slice.length);
+          for (var i = 0; i < slice.length; i++) {
+            byteNumbers[i] = slice.charCodeAt(i);
+          }
+
+          var byteArray = new Uint8Array(byteNumbers);
+
+          byteArrays.push(byteArray);
+        }
+
+        var blob = new Blob(byteArrays, { type: contentType });
+        return blob;
+      }
+
+      var socket = io.connect("http://127.0.0.1:5000");
+      const recordAudio = () =>
+        new Promise(async resolve => {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: true
+          });
+          const mediaRecorder = new MediaRecorder(stream);
+          const audioChunks = [];
+
+          mediaRecorder.addEventListener("dataavailable", event => {
+            audioChunks.push(event.data);
+          });
+
+          const start = () => mediaRecorder.start();
+
+          const stop = () =>
+            new Promise(resolve => {
+              mediaRecorder.addEventListener("stop", () => {
+                const audioBlob = new Blob(audioChunks);
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = new Audio(audioUrl);
+                const play = () => audio.play();
+                resolve({ audioBlob, audioUrl, play });
+              });
+
+              mediaRecorder.stop();
+            });
+
+          resolve({ start, stop });
+        });
+
+      const sleep = time => new Promise(resolve => setTimeout(resolve, time));
+
+      function startRecording() {
+        setTimeout(() => {
+          (async () => {
+            const recorder = await recordAudio();
+            recorder.start();
+            await sleep(1000);
+            const audio = await recorder.stop();
+            socket.emit("audioEmitted", { callAudio: audio });
+          })();
+        }, 1000);
+      }
+
+      socket.on("recievedAudio", function(callAudio) {
+        console.log("Recieved Audio: ", callAudio);
+        callAudio = JSON.parse(
+          callAudio.replace(/u'/g, "'").replace(/'/g, '"')
+        );
+        callAudio["callAudio"]["audioBlob"] = b64toBlob(
+          callAudio["callAudio"]["audioBlob"],
+          "audio/webm;codecs=opus"
+        );
+        const audioBlob = new Blob([callAudio["callAudio"]], {
+          type: "audio/webm;codecs=opus"
+        });
+        const audioUrl = URL.createObjectURL(
+          callAudio["callAudio"]["audioBlob"]
+        );
+        const audio = new Audio(audioUrl);
+        audio.play();
+      });
     </script>
   </body>
 </html>
