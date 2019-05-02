@@ -93,7 +93,6 @@
       class="btn btn-primary"
       data-toggle="modal"
       data-target="#popUpModal"
-      style="visibility: hidden;"
     >
       yo
     </button>
@@ -102,7 +101,6 @@
       class="btn btn-primary"
       data-toggle="modal"
       data-target="#ackModal"
-      style="visibility: hidden;"
     >
       ack
     </button>
@@ -265,6 +263,7 @@
         });
       }
       socket.on("userRequestedToCall", function(gidInfo) {
+        console.log(gidInfo);
         gidInfo = JSON.parse(gidInfo.replace(/u'/g, "'").replace(/'/g, '"'));
         $("#popUpModalLabel").innerHTML =
           "User " + gidInfo["requesting_gid"] + "has requested to call you.";
