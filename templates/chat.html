@@ -265,6 +265,7 @@
         });
       }
       socket.on("userRequestedToCall", function(gidInfo) {
+        gidInfo = JSON.parse(gidInfo.replace(/u'/g, "'").replace(/'/g, '"'));
         $("#popUpModalLabel").innerHTML =
           "User " + gidInfo["requesting_gid"] + "has requested to call you.";
         $("#popUpModal").click();
@@ -273,6 +274,7 @@
         socket.emit("callActionFromUser", { acceptance: action });
       }
       socket.on("acceptanceAck", function(ack) {
+        ack = JSON.parse(ack.replace(/u'/g, "'").replace(/'/g, '"'));
         $("#ackModal").click();
         if (ack["acceptance"] === "accept") {
           $("ackModalLabel").innerHTML = "User has accepted your call.";
