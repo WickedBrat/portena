@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='bootstrap.min.css') }}"
+    />
+    <style>
+      .login-form {
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+        justify-content: center;
+        height: 80vh;
+      }
+    </style>
+    <script>
+      if (!localStorage.getItem("gid")) {
+        window.location = "/";
+      }
+    </script>
+    <title>Portena</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark white">
+      <a class="navbar-brand" href="#">Portena</a>
+    </nav>
+
+    <div class="container">
+      <div class="form-group">
+        <input
+          class="form-control"
+          id="userGid"
+          placeholder="Enter user's unique GID"
+        />
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="addUser()">
+        Add user
+      </button>
+      <br /><br />
+      Available Users:
+      <ul class="list-group"></ul>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <script>
+      function listUsers() {
+        ulTag = document.getElementsByClassName("list-group")[0];
+        let userList = JSON.parse(localStorage.getItem("userGid"));
+        if (!userList) {
+          userList = [];
+          if (userList.length === 0) {
+            var node = document.createElement("li");
+            node.className = "list-group-item";
+            node.appendChild(document.createTextNode("No users exist"));
+            ulTag.appendChild(node);
+          }
+        } else {
+          userList.forEach(user => {
+            var aTag = document.createElement("a");
+            aTag.href = '/users/' + user;
+            var node = document.createElement("li");
+            node.className = "list-group-item";
+            node.appendChild(document.createTextNode(user));
+            aTag.appendChild(node);
+            ulTag.appendChild(aTag);
+          });
+        }
+      }
+      listUsers();
+      function addUser() {
+        const usrGid = document.getElementById("userGid").value;
+        let userGid = JSON.parse(localStorage.getItem("userGid"));
+        if (!userGid) {
+          userGid = [];
+          userGid.push(usrGid);
+        } else {
+          userGid.push(usrGid);
+        }
+        localStorage.setItem("userGid", JSON.stringify(userGid));
+        window.location.reload();
+      }
+    </script>
+  </body>
+</html>

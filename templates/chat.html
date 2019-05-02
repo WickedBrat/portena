@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='bootstrap.min.css') }}"
+    />
+    <style>
+      .login-form {
+        display: flex;
+        align-content: center;
+        justify-content: baseline;
+        width: 100%;
+      }
+      .text-messages {
+        height: 90vh;
+      }
+      #to-user {
+        padding: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: wheat;
+      }
+    </style>
+    <script>
+      if (!localStorage.getItem("gid")) {
+        window.location = "/";
+      }
+    </script>
+    <title>Portena</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark white">
+      <a class="navbar-brand" href="#">Portena</a>
+    </nav>
+    <div class="text-messages">
+      <div id="to-user">{{ user_gid }}</div>
+    </div>
+
+    <div class="login-form">
+      <input
+        class="form-control"
+        id="chatMsg"
+        placeholder="Enter your text..."
+      />
+      <button
+        type="submit"
+        class="btn btn-primary"
+        onclick="generatePacketAndSend()"
+      >
+        Send
+      </button>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+
+    <script>
+      var socket = io.connect("http://127.0.0.1:5000");
+      function generatePacketAndSend() {
+        var chatMsg = document.getElementById("chatMsg").value;
+        document.getElementById("chatMsg").value = "";
+        const messagePacket = {
+          message: chatMsg,
+          fromGid: localStorage.getItem("gid"),
+          timestamp: Date.now(),
+          toGid: document.getElementById("to-user").value
+        };
+        socket.emit("message", { data: messagePacket });
+      }
+    </script>
+  </body>
+</html>

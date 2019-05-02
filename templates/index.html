@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <!-- Bootstrap CSS -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='bootstrap.min.css') }}"
+    />
+    <style>
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        align-content: center;
+        justify-content: center;
+        height: 80vh;
+    }
+    </style>
+    <script>
+    if (localStorage.getItem('gid')) {
+        window.location = '/users';
+    }
+    </script>
+    <title>Portena</title>
+  </head>
+  <body>
+    <nav class="navbar navbar-dark bg-dark white">
+      <a class="navbar-brand" href="#">Portena</a>
+    </nav>
+
+    <div class="login-form container">
+      <div class="form-group">
+        <label for="exampleInputPassword1">Enter you Unique GID</label>
+        <input class="form-control" id="gid" placeholder="Enter GID" />
+      </div>
+      <button type="submit" class="btn btn-primary" onclick="loginWithGID()">
+        Submit
+      </button>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="{{ url_for('static', filename='jquery.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+    <script>
+      function loginWithGID() {
+        const gid = document.getElementById("gid").value;
+        localStorage.setItem('gid', gid);
+        window.location = '/users';
+      }
+    </script>
+  </body>
+</html>
