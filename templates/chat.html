@@ -146,7 +146,7 @@
                 messageContainer.className = "sender-msg";
                 messageContainer.innerHTML = user.message;
                 nodeContainer.appendChild(messageContainer);
-              } else if (user.toGid === $("#to-user")) {
+              } else if (user.toGid === $("#to-user").innerHTML) {
                 nodeContainer.className = "reciever-container";
                 messageContainer.className = "reciever-msg";
                 messageContainer.innerHTML = user.message;
