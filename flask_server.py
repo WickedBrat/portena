@@ -37,7 +37,7 @@ def chat(GID):
 @socketio.on('message')
 def handle_message(message):
     print(message)
-    s.send(message)
+    s.send(str(message).encode())
     s.close()
     # print('received message: ', base64.b64encode((message['data']['audioBlob'])))
     # socketio.emit('message', str(
