@@ -93,6 +93,7 @@
       class="btn btn-primary"
       data-toggle="modal"
       data-target="#popUpModal"
+      id="popUpModalButton"
     >
       yo
     </button>
@@ -100,6 +101,7 @@
       type="button"
       class="btn btn-primary"
       data-toggle="modal"
+      id="ackModalButton"
       data-target="#ackModal"
     >
       ack
@@ -267,14 +269,14 @@
         gidInfo = JSON.parse(gidInfo.replace(/u'/g, "'").replace(/'/g, '"'));
         $("#popUpModalLabel").innerHTML =
           "User " + gidInfo["requesting_gid"] + "has requested to call you.";
-        $("#popUpModal").click();
+        $("#popUpModalButton")[0].click();
       });
       function callAction(action) {
         socket.emit("callActionFromUser", { acceptance: action });
       }
       socket.on("acceptanceAck", function(ack) {
         ack = JSON.parse(ack.replace(/u'/g, "'").replace(/'/g, '"'));
-        $("#ackModal").click();
+        $("#ackModalButton")[0].click();
         if (ack["acceptance"] === "accept") {
           $("ackModalLabel").innerHTML = "User has accepted your call.";
         } else {
