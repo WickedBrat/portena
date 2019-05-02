@@ -24,13 +24,13 @@ def wait_for_clients(s):
         data = c.recv(2048).decode()
         if data:
             print(data)
-            if data['requesting_gid']:
+            if data.find("u'requesting_gid':"):
                 socketio.emit('userRequestedToCall', data)
             else: 
-                if data['acceptance']:
+                if data("u'acceptance':"):
                     socketio.emit('acceptanceAck', data)
                 else:
-                    if data['callAudio']:
+                    if data("u'callAudio':"):
                         socketio.emit('recievedAudio', data)
                     else:
                         socketio.emit('reply', data)
