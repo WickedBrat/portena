@@ -100,7 +100,6 @@
         };
         // socket.emit("message", { data: messagePacket });
         addMsgToLocalStorage(messagePacket);
-        localStorage.setItem("chatMessages", JSON.stringify(chatMessages));
         generateChatMessages();
 
         // TODO: Write code for ack of each emitted packet.
@@ -125,6 +124,7 @@
             messagePacket
           );
         }
+        localStorage.setItem("chatMessages", JSON.stringify(chatMessages));
       }
       function generateChatMessages() {
         var messageBox = document.createElement("message-box");
