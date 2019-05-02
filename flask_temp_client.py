@@ -51,7 +51,7 @@ def chat(GID):
 def handle_message(message):
     print(message)
     c = socket.socket()
-    c.connect(('192.168.43.56', 12345))
+    c.connect(('192.168.43.186', 12345))
     c.send(str(message).encode())
     c.close()
     # print('received message: ', base64.b64encode((message['data']['audioBlob'])))

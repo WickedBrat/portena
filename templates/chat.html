@@ -20,7 +20,8 @@
         width: 100%;
       }
       .text-messages {
-        height: 90vh;
+        height: 85.9vh;
+        overflow: auto;
       }
       #to-user {
         padding: 10px;
@@ -28,6 +29,26 @@
         align-items: center;
         justify-content: center;
         background-color: wheat;
+      }
+      .reciever-msg {
+        border-radius: 5px;
+        margin: 10px;
+        padding: 15px 40px;
+        border: 1px #dddddd solid;
+        background-color: #5793d8;
+        width: max-content;
+      }
+      .sender-msg {
+        border-radius: 5px;
+        margin: 10px;
+        padding: 15px 40px;
+        border: 1px #dddddd solid;
+        background-color: #e28fbb;
+      }
+      .sender-container {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
       }
     </style>
     <script>
@@ -41,9 +62,8 @@
     <nav class="navbar navbar-dark bg-dark white">
       <a class="navbar-brand" href="#">Portena</a>
     </nav>
-    <div class="text-messages">
-      <div id="to-user">{{ user_gid }}</div>
-    </div>
+    <div id="to-user">{{ user_gid }}</div>
+    <div class="text-messages"></div>
 
     <div class="login-form">
       <input
@@ -76,10 +96,68 @@
           message: chatMsg,
           fromGid: localStorage.getItem("gid"),
           timestamp: Date.now(),
-          toGid: document.getElementById("to-user").value
+          toGid: document.getElementById("to-user").innerHTML
         };
-        socket.emit("message", { data: messagePacket });
+        // socket.emit("message", { data: messagePacket });
+        addMsgToLocalStorage(messagePacket);
+        localStorage.setItem("chatMessages", JSON.stringify(chatMessages));
+        generateChatMessages();
+
+        // TODO: Write code for ack of each emitted packet.
       }
+      socket.on("reply", function(data) {
+        addMsgToLocalStorage(data);
+      });
+    </script>
+
+    <script>
+      function addMsgToLocalStorage(messagePacket) {
+        let chatMessages = JSON.parse(localStorage.getItem("chatMessages"));
+        if (!chatMessages) {
+          chatMessages = {};
+        }
+        if (!chatMessages[document.getElementById("to-user").innerHTML]) {
+          chatMessages[document.getElementById("to-user").innerHTML] = [
+            messagePacket
+          ];
+        } else {
+          chatMessages[document.getElementById("to-user").innerHTML].push(
+            messagePacket
+          );
+        }
+      }
+      function generateChatMessages() {
+        var messageBox = document.createElement("message-box");
+        let chatMessages = JSON.parse(localStorage.getItem("chatMessages"));
+        if (!chatMessages) {
+          chatMessages = {};
+        }
+        if (!chatMessages[document.getElementById("to-user").innerHTML]) {
+          chatMessages[document.getElementById("to-user").innerHTML] = [];
+        } else {
+          chatMessages[document.getElementById("to-user").innerHTML].forEach(
+            user => {
+              var nodeContainer = document.createElement("div");
+              var messageContainer = document.createElement("div");
+              if (user.fromGid === localStorage.getItem("gid")) {
+                nodeContainer.className = "sender-container";
+                messageContainer.className = "sender-msg";
+                messageContainer.innerHTML = user.message;
+                nodeContainer.appendChild(messageContainer);
+              } else if (user.toGid === $('#to-user')) {
+                nodeContainer.className = "reciever-container";
+                messageContainer.className = "reciever-msg";
+                messageContainer.innerHTML = user.message;
+                nodeContainer.appendChild(messageContainer);
+              }
+              messageBox.appendChild(nodeContainer);
+            }
+          );
+        }
+        $(".text-messages")[0].innerHTML = "";
+        $(".text-messages")[0].appendChild(messageBox);
+      }
+      generateChatMessages();
     </script>
   </body>
 </html>
