@@ -85,8 +85,6 @@
       }, 3000);
     }
 
-    console.log("recieving");
-
     socket.on("message", function(data) {
       data = JSON.parse(data.replace(/u'/g, "'").replace(/'/g, '"'));
       data["data"]["audioBlob"] = b64toBlob(

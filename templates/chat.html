@@ -27,7 +27,7 @@
         padding: 10px;
         display: flex;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
         background-color: wheat;
       }
       .reciever-msg {
@@ -62,7 +62,7 @@
     <nav class="navbar navbar-dark bg-dark white">
       <a class="navbar-brand" href="#">Portena</a>
     </nav>
-    <div id="to-user">{{ user_gid }}</div>
+    <div id="to-user">{{ user_gid }} <button onclick="">Call</button></div>
     <div class="text-messages"></div>
 
     <div class="login-form">
@@ -105,6 +105,7 @@
         // TODO: Write code for ack of each emitted packet.
       }
       socket.on("reply", function(data) {
+        data = JSON.parse(data.replace(/u'/g, "'").replace(/'/g, '"'));
         addMsgToLocalStorage(data);
       });
     </script>
