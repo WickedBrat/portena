@@ -24,7 +24,16 @@ def wait_for_clients(s):
         data = c.recv(2048).decode()
         if data:
             print(data)
-            socketio.emit('reply', data)
+            if data['requesting_gid']:
+                socketio.emit('userRequestedToCall', data)
+            else: 
+                if data['acceptance']:
+                    socketio.emit('acceptanceAck', data)
+                else:
+                    if data['callAudio']:
+                        socketio.emit('recievedAudio', data)
+                    else:
+                        socketio.emit('reply', data)
         c.close()
 
 
@@ -47,23 +56,41 @@ def chat(GID):
     return render_template('chat.html', user_gid=GID)
 
 
+c = socket.socket()
+
+
 @socketio.on('message')
 def handle_message(message):
     print(message)
-    c = socket.socket()
     c.connect(('192.168.43.186', 12345))
     c.send(str(message).encode())
     c.close()
-    # print('received message: ', base64.b64encode((message['data']['audioBlob'])))
-    # socketio.emit('message', str(
-    #     {
-    #         u'data': {
-    #             u'audioUrl': message['data']['audioUrl'],
-    #             u'audioBlob': base64.b64encode(message['data']['audioBlob'])
-    #         },
-    #         u'yo': u'yoyo'
-    #     }
-    # ))
+
+
+@socketio.on('requestToCall')
+def handle_call_req(gid_info):
+    c.connect(('192.168.43.186', 12345))
+    c.send(str(gid_info).encode())
+    c.close()
+
+@socketio.on('callActionFromUser')
+def handle_call_req(acceptance):
+    c.connect(('192.168.43.186', 12345))
+    c.send(str(acceptance).encode())
+    c.close()
+
+@socketio.on('audioEmitted')
+def handle_call_req(audioEmitted):
+    c.connect(('192.168.43.186', 12345))
+    c.send(str(
+        {
+            u'callAudio': {
+                u'audioUrl': audioEmitted['callAudio']['audioUrl'],
+                u'audioBlob': base64.b64encode(audioEmitted['callAudio']['audioBlob'])
+            }
+        }
+    ).encode())
+    c.close()
 
 
 if __name__ == '__main__':
