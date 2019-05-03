@@ -267,7 +267,7 @@
       socket.on("userRequestedToCall", function(gidInfo) {
         console.log(gidInfo);
         gidInfo = JSON.parse(gidInfo.replace(/u'/g, "'").replace(/'/g, '"'));
-        $("#popUpModalLabel").innerHTML =
+        $("#popUpModalLabel")[0].innerHTML =
           "User " + gidInfo["requesting_gid"] + "has requested to call you.";
         $("#popUpModalButton")[0].click();
       });
@@ -278,9 +278,9 @@
         ack = JSON.parse(ack.replace(/u'/g, "'").replace(/'/g, '"'));
         $("#ackModalButton")[0].click();
         if (ack["acceptance"] === "accept") {
-          $("ackModalLabel").innerHTML = "User has accepted your call.";
+          $("ackModalLabel")[0].innerHTML = "User has accepted your call.";
         } else {
-          $("ackModalLabel").innerHTML = "User has declined your call.";
+          $("ackModalLabel")[0].innerHTML = "User has declined your call.";
         }
       });
     </script>
