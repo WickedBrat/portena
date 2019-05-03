@@ -191,7 +191,6 @@
         const messagePacket = {
           message: chatMsg,
           fromGid: localStorage.getItem("gid"),
-          timestamp: Date.now(),
           toGid: document.getElementById("to-user").innerHTML
         };
         socket.emit("message", { data: messagePacket });
