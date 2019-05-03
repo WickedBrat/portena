@@ -27,10 +27,10 @@ def wait_for_clients(s):
             if data.find("'requesting_gid':"):
                 print('requesting_gid')
                 socketio.emit('userRequestedToCall', data)
-            if data("'acceptance':"):
+            if data.find("'acceptance':"):
                 print('acceptanceAck')
                 socketio.emit('acceptanceAck', data)
-            if data("'callAudio':"):
+            if data.find("'callAudio':"):
                 print('recievedAudio')
                 socketio.emit('recievedAudio', data)
             else:
