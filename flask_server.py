@@ -30,7 +30,7 @@ def wait_for_clients(s):
             if data.find("'acceptance':") > 0:
                 print('acceptanceAck')
                 socketio.emit('acceptanceAck', data)
-            if data.find("'callAudio':") > 0:
+            if data.find("'audioUrl':") > 0:
                 print('recievedAudio')
                 socketio.emit('recievedAudio', data)
             else:
