@@ -23,14 +23,14 @@ def wait_for_clients(s):
         print 'Got connection from', addr
         data = c.recv(2048).decode()
         if data:
-            print(data, data.find("u'requesting_gid'"))
-            if data.find("u'requesting_gid'"):
+            print(data, data.find("'requesting_gid'"))
+            if data.find("'requesting_gid':"):
                 print('requesting_gid')
                 socketio.emit('userRequestedToCall', data)
-            if data("u'acceptance'"):
+            if data("'acceptance':"):
                 print('acceptanceAck')
                 socketio.emit('acceptanceAck', data)
-            if data("u'callAudio'"):
+            if data("'callAudio':"):
                 print('recievedAudio')
                 socketio.emit('recievedAudio', data)
             else:
