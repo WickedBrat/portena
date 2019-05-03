@@ -24,13 +24,13 @@ def wait_for_clients(s):
         data = c.recv(2048).decode()
         if data:
             print(data, data.find("'requesting_gid'"))
-            if data.find("'requesting_gid':"):
+            if data.find("'requesting_gid':") > 0:
                 print('requesting_gid')
                 socketio.emit('userRequestedToCall', data)
-            if data.find("'acceptance':"):
+            if data.find("'acceptance':") > 0:
                 print('acceptanceAck')
                 socketio.emit('acceptanceAck', data)
-            if data.find("'callAudio':"):
+            if data.find("'callAudio':") > 0:
                 print('recievedAudio')
                 socketio.emit('recievedAudio', data)
             else:
@@ -73,12 +73,14 @@ def handle_call_req(gid_info):
     c.send(str(gid_info).encode())
     c.close()
 
+
 @socketio.on('callActionFromUser')
 def handle_call_req(acceptance):
     c = socket.socket()
     c.connect(('192.168.43.56', 12345))
     c.send(str(acceptance).encode())
     c.close()
+
 
 @socketio.on('audioEmitted')
 def handle_call_req(audioEmitted):
