@@ -234,6 +234,8 @@
         } else {
           chatMessages[document.getElementById("to-user").innerHTML].forEach(
             user => {
+              console.log(user);
+              
               var nodeContainer = document.createElement("div");
               var messageContainer = document.createElement("div");
               if (user.fromGid === localStorage.getItem("gid")) {
@@ -241,7 +243,7 @@
                 messageContainer.className = "sender-msg";
                 messageContainer.innerHTML = user.message;
                 nodeContainer.appendChild(messageContainer);
-              } else if (user.toGid === $("#to-user").innerHTML) {
+              } else if (user.toGid === $("#to-user")[0].innerHTML) {
                 nodeContainer.className = "reciever-container";
                 messageContainer.className = "reciever-msg";
                 messageContainer.innerHTML = user.message;
