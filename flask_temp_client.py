@@ -22,7 +22,15 @@ def wait_for_clients(s):
     while True:
         c, addr = s.accept()
         print 'Got connection from', addr
-        data = c.recv(40048).decode()
+        partial_data = ''
+        while True:
+            data = c.recv(2049)
+            if not data:
+                break
+            partial_data += data
+    
+        data = partial_data.decode()
+        # data = c.recv(40048).decode()
         if data:
             print(data, data.find("'requesting_gid'"))
             if data.find('"requesting_gid":') > 0:
