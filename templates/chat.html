@@ -288,7 +288,7 @@
       });
       function callAction(action) {
         socket.emit("callActionFromUser", { acceptance: action });
-        if (action === 'accept') {
+        if (action === "accept") {
           startRecording();
         }
       }
@@ -366,16 +366,14 @@
 
       const sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
-      function startRecording() {
-        setInterval(() => {
-          (async () => {
-            const recorder = await recordAudio();
-            recorder.start();
-            await sleep(1000);
-            const audio = await recorder.stop();
-            socket.emit("audioEmitted", { callAudio: audio });
-          })();
-        }, 1000);
+      async function startRecording() {
+        const recorder = await recordAudio();
+        recorder.start();
+        setTimeout(async () => {
+          const audio = await recorder.stop();
+          socket.emit("message", { data: audio, yo: "yoyo" });
+          console.log("emitted");
+        }, 3000);
       }
 
       socket.on("recievedAudio", function(callAudio) {
@@ -394,6 +392,7 @@
           callAudio["callAudio"]["audioBlob"]
         );
         const audio = new Audio(audioUrl);
+        console.log(audio, "playing");
         audio.play();
       });
     </script>
