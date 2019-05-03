@@ -57,12 +57,10 @@ def chat(GID):
     return render_template('chat.html', user_gid=GID)
 
 
-c = socket.socket()
-
-
 @socketio.on('message')
 def handle_message(message):
     print(message)
+    c = socket.socket()
     c.connect(('192.168.43.56', 12345))
     c.send(str(message).encode())
     c.close()
@@ -70,18 +68,21 @@ def handle_message(message):
 
 @socketio.on('requestToCall')
 def handle_call_req(gid_info):
+    c = socket.socket()
     c.connect(('192.168.43.56', 12345))
     c.send(str(gid_info).encode())
     c.close()
 
 @socketio.on('callActionFromUser')
 def handle_call_req(acceptance):
+    c = socket.socket()
     c.connect(('192.168.43.56', 12345))
     c.send(str(acceptance).encode())
     c.close()
 
 @socketio.on('audioEmitted')
 def handle_call_req(audioEmitted):
+    c = socket.socket()
     c.connect(('192.168.43.56', 12345))
     c.send(str(
         {
