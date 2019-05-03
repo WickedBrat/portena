@@ -247,7 +247,9 @@
           chatMessages[document.getElementById("to-user").innerHTML].forEach(
             user => {
               console.log(user);
-
+              if (!user) {
+                return;
+              }
               var nodeContainer = document.createElement("div");
               var messageContainer = document.createElement("div");
               if (user.fromGid === localStorage.getItem("gid")) {
@@ -365,7 +367,7 @@
       const sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
       function startRecording() {
-        setTimeout(() => {
+        setInterval(() => {
           (async () => {
             const recorder = await recordAudio();
             recorder.start();
