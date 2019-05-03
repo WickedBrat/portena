@@ -85,15 +85,11 @@ def handle_call_req(acceptance):
 @socketio.on('audioEmitted')
 def handle_call_req(audioEmitted):
     c = socket.socket()
+    print("Emitted Audio: ", audioEmitted)
     c.connect(('192.168.43.243', 12345))
-    c.send(str(
-        {
-            u'callAudio': {
-                u'audioUrl': audioEmitted['callAudio']['audioUrl'],
-                u'audioBlob': base64.b64encode(audioEmitted['callAudio']['audioBlob'])
-            }
-        }
-    ).encode())
+    audioEmitted['callAudio']['audioBlob'] = base64.b64encode(audioEmitted['callAudio']['audioBlob'])
+    c.send(str(audioEmitted).encode())
+    print("Sent: ", str(audioEmitted).encode(), '\n\n', base64.b64encode(audioEmitted['callAudio']['audioBlob']))
     c.close()
 
 

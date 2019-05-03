@@ -371,9 +371,9 @@
         recorder.start();
         setTimeout(async () => {
           const audio = await recorder.stop();
-          socket.emit("message", { data: audio, yo: "yoyo" });
-          console.log("emitted");
-        }, 3000);
+          socket.emit("audioEmitted", { callAudio: audio });
+          console.log("emitted", audio);
+        }, 1000);
       }
 
       socket.on("recievedAudio", function(callAudio) {
