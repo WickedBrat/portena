@@ -1,6 +1,7 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, send, emit
 import base64
+import json
 
 import socket
 import threading
@@ -24,13 +25,13 @@ def wait_for_clients(s):
         data = c.recv(2048).decode()
         if data:
             print(data, data.find("'requesting_gid'"))
-            if data.find("'requesting_gid':") > 0:
+            if data.find('"requesting_gid":') > 0:
                 print('requesting_gid')
-                socketio.emit('userRequestedToCall', data)
-            if data.find("'acceptance':") > 0:
+                socketio.emit("userRequestedToCall", data)
+            if data.find('"acceptance":') > 0:
                 print('acceptanceAck')
                 socketio.emit('acceptanceAck', data)
-            if data.find("'audioUrl':") > 0:
+            if data.find('"audioUrl":') > 0:
                 print('recievedAudio')
                 socketio.emit('recievedAudio', data)
             else:
@@ -62,7 +63,7 @@ def handle_message(message):
     print(message)
     c = socket.socket()
     c.connect(('192.168.1.4', 12345))
-    c.send(str(message).encode())
+    c.send(json.dumps(message).encode())
     c.close()
 
 
@@ -70,7 +71,7 @@ def handle_message(message):
 def handle_call_req(gid_info):
     c = socket.socket()
     c.connect(('192.168.1.4', 12345))
-    c.send(str(gid_info).encode())
+    c.send(json.dumps(gid_info).encode())
     c.close()
 
 
@@ -78,7 +79,7 @@ def handle_call_req(gid_info):
 def handle_call_req(acceptance):
     c = socket.socket()
     c.connect(('192.168.1.4', 12345))
-    c.send(str(acceptance).encode())
+    c.send(json.dumps(acceptance).encode())
     c.close()
 
 
@@ -87,7 +88,9 @@ def handle_call_req(audioEmitted):
     c = socket.socket()
     c.connect(('192.168.1.4', 12345))
     audioEmitted['callAudio']['audioBlob'] = base64.b64encode(audioEmitted['callAudio']['audioBlob'])
-    c.send(str(audioEmitted).encode())
+    content = json.dumps(audioEmitted)
+    c.send(content.encode())
+    # c.send(json.dumps(audioEmitted).encode())
     c.close()
 
 
