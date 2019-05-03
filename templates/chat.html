@@ -242,7 +242,7 @@
                 messageContainer.className = "sender-msg";
                 messageContainer.innerHTML = user.message;
                 nodeContainer.appendChild(messageContainer);
-              } else if (user.toGid === $("#to-user")[0].innerHTML) {
+              } else if (user.fromGid === $("#to-user")[0].innerHTML) {
                 nodeContainer.className = "reciever-container";
                 messageContainer.className = "reciever-msg";
                 messageContainer.innerHTML = user.message;
