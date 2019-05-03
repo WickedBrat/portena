@@ -71,7 +71,7 @@ def chat(GID):
 def handle_message(message):
     print(message)
     c = socket.socket()
-    c.connect(('192.168.1.4', 12345))
+    c.connect(('192.168.43.243', 12345))
     c.send(json.dumps(message).encode())
     c.close()
 
@@ -79,7 +79,7 @@ def handle_message(message):
 @socketio.on('requestToCall')
 def handle_call_req(gid_info):
     c = socket.socket()
-    c.connect(('192.168.1.4', 12345))
+    c.connect(('192.168.43.243', 12345))
     c.send(json.dumps(gid_info).encode())
     c.close()
 
@@ -87,7 +87,7 @@ def handle_call_req(gid_info):
 @socketio.on('callActionFromUser')
 def handle_call_req(acceptance):
     c = socket.socket()
-    c.connect(('192.168.1.4', 12345))
+    c.connect(('192.168.43.243', 12345))
     c.send(json.dumps(acceptance).encode())
     c.close()
 
@@ -95,7 +95,7 @@ def handle_call_req(acceptance):
 @socketio.on('audioEmitted')
 def handle_call_req(audioEmitted):
     c = socket.socket()
-    c.connect(('192.168.1.4', 12345))
+    c.connect(('192.168.43.243', 12345))
     audioEmitted['callAudio']['audioBlob'] = base64.b64encode(audioEmitted['callAudio']['audioBlob'])
     content = json.dumps(audioEmitted)
     c.send(content.encode())
