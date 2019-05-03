@@ -246,7 +246,6 @@
         } else {
           chatMessages[document.getElementById("to-user").innerHTML].forEach(
             user => {
-              console.log(user);
               if (!user) {
                 return;
               }
@@ -276,7 +275,7 @@
       function requestToCallUser() {
         socket.emit("requestToCall", {
           requesting_gid: localStorage.getItem("gid"),
-          for_gid: $("#to-user").innerHTML
+          for_gid: $("#to-user")[0].innerHTML
         });
       }
       socket.on("userRequestedToCall", function(gidInfo) {
@@ -367,13 +366,17 @@
       const sleep = time => new Promise(resolve => setTimeout(resolve, time));
 
       async function startRecording() {
-        const recorder = await recordAudio();
-        recorder.start();
-        setTimeout(async () => {
-          const audio = await recorder.stop();
-          socket.emit("audioEmitted", { callAudio: audio });
-          console.log("emitted", audio);
-        }, 3000);
+        var interval = setInterval(async () => {
+          console.log('recording...')
+          const recorder = await recordAudio();
+          recorder.start();
+          setTimeout(async () => {
+            const audio = await recorder.stop();
+            socket.emit("audioEmitted", { callAudio: audio });
+            console.log("emitted", audio);
+          }, 3000);
+        }, 3000)
+        
       }
 
       socket.on("recievedAudio", function(callAudio) {

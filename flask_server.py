@@ -22,7 +22,15 @@ def wait_for_clients(s):
     while True:
         c, addr = s.accept()
         print 'Got connection from', addr
-        data = c.recv(2048).decode()
+        partial_content = ''
+        while True:
+            data = c.recv(2049)
+            if not data:
+                break
+            partial_content += data
+
+        data = partial_content.decode()
+        # data = c.recv(40048).decode()
         if data:
             print(data, data.find("'requesting_gid'"))
             if data.find('"requesting_gid":') > 0:
@@ -35,6 +43,7 @@ def wait_for_clients(s):
                 print('recievedAudio')
                 socketio.emit('recievedAudio', data)
             else:
+                print('Message Reply')
                 socketio.emit('reply', data)
         c.close()
 
