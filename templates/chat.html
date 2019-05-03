@@ -278,9 +278,9 @@
         ack = JSON.parse(ack.replace(/u'/g, "'").replace(/'/g, '"'));
         $("#ackModalButton")[0].click();
         if (ack["acceptance"] === "accept") {
-          $("ackModalLabel")[0].innerHTML = "User has accepted your call.";
+          $("#ackModalLabel")[0].innerHTML = "User has accepted your call.";
         } else {
-          $("ackModalLabel")[0].innerHTML = "User has declined your call.";
+          $("#ackModalLabel")[0].innerHTML = "User has declined your call.";
         }
       });
     </script>
